@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.modules.v1.transcribe.router import router as transcribe_router
+from app.modules.v1.transcription.router import router as transcribe_router
 from app.modules.v1.sentiment.router import router as sentiment_router
 from app.core.database import init_indexes
 from contextlib import asynccontextmanager

@@ -37,7 +37,8 @@ async def transcribe_video(url: str, model_name: str = "base", **whisper_opts) -
 
     if doc:
         if "transcription" in doc:
-            return doc
+            doc["_id"] = str(doc["_id"])
+            return Transcription(**doc)
 
     base, path, title = downloader.download_audio(url, filename_hash)
 
@@ -68,5 +69,12 @@ async def transcribe_video(url: str, model_name: str = "base", **whisper_opts) -
         await run_in_threadpool(lambda: Path(path).unlink(missing_ok=True))
     except Exception:
         pass
-
-    return new_doc
+    
+    inserted_doc = await db.transcriptions.find_one(
+        {
+            "link_hash": filename_hash,
+            "model": model_name
+        }
+    )
+    inserted_doc["_id"] = str(inserted_doc["_id"])
+    return Transcription(**inserted_doc)
