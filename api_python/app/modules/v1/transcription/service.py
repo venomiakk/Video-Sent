@@ -23,12 +23,12 @@ def get_model(name: str = "base") -> Any:
     return _models[name]
 
 
-async def transcribe_video(url: str, model_name: str = "base", **whisper_opts) -> Transcription:
+async def transcribe_video(url: str, model_name: str = "whisperpy-base", **whisper_opts) -> Transcription:
     """Download audio from `url` and transcribe it using Whisper.
     Returns a Transcription object.
     """
     filename_hash = hash_url(str(url))
-
+   
     doc = await db.transcriptions.find_one(
         {
             "link_hash": filename_hash,
@@ -41,8 +41,8 @@ async def transcribe_video(url: str, model_name: str = "base", **whisper_opts) -
             return Transcription(**doc)
 
     base, path, title = downloader.download_audio(url, filename_hash)
-
-    model = get_model(model_name)
+    whisper_model_name = model_name[len("whisperpy-"):] if model_name.startswith("whisperpy-") else model_name
+    model = get_model(whisper_model_name)
     # whisper expects a path-like or filename string
     result = model.transcribe(str(path), **whisper_opts)
     transcription_text = result.get("text", "").strip() if isinstance(result, dict) else ""

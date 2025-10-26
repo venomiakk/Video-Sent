@@ -5,14 +5,14 @@ from typing import Optional, Literal
 
 class TranscriptionRequest(BaseModel):
     url: HttpUrl
-    model: Optional[Literal["tiny", "base", "small", "medium", "large", "turbo"]] = "base"
+    model: Optional[Literal["whisperpy-tiny", "whisperpy-base", "whisperpy-small", "whisperpy-medium", "whisperpy-large", "whisperpy-turbo"]] = "whisperpy-base"
 
 class Transcription(BaseModel):
     link_hash: str
     url: HttpUrl
     title: Optional[str]
     transcription: Optional[str]
-    model: Optional[Literal["tiny", "base", "small", "medium", "large", "turbo"]]
+    model: Optional[Literal["whisperpy-tiny", "whisperpy-base", "whisperpy-small", "whisperpy-medium", "whisperpy-large", "whisperpy-turbo"]]
     created_at: datetime
     id: Optional[str] = Field(None, alias="_id")
     # Maybe add video services, duration, transcription provider etc. later

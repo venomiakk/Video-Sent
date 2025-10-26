@@ -11,14 +11,34 @@ Technology Review Sentiment Analyzer
 
 ## How to run
 
-python api:
+### python api:
+
+run app:
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-react ui:
+run unit tests:
+
+```bash
+pytest .\tests\test_downloader.py
+```
+
+run coverage check:
+
+```bash
+pytest --cov=app --cov-report=term-missing -q
+```
+
+run coverage check with html report:
+
+```bash
+pytest --cov=app --cov-report=html
+```
+
+### react ui:
+
 ```bash
 npm run dev
 ```
-
