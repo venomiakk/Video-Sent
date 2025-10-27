@@ -3,3 +3,4 @@
 **/*.mp3
 **/*.wav
 api_python/.coverage
+**/.pytest_cache
