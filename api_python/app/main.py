@@ -1,9 +1,12 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.modules.v1.transcription.schemas import Transcription, TranscriptionRequest
 from app.modules.v1.transcription.service import transcribe_video
 from app.modules.v1.transcription.router import router as transcribe_router
 from app.modules.v1.sentiment.router import analyze_sentiment, router as sentiment_router
+from app.modules.v1.auth.router import router as auth_router
 from app.core.database import init_indexes
+from app.socketio_handler import mount_socketio
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 from fastapi import Request
@@ -27,6 +30,19 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 app = FastAPI(title="Video Sentiment Analyzer", lifespan=lifespan)
 
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount Socket.IO
+mount_socketio(app)
+
+app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(transcribe_router, prefix="/api/v1/transcribe", tags=["Transcription"])
 app.include_router(sentiment_router, prefix="/api/v1/sentiment", tags=["Sentiment"])
 
