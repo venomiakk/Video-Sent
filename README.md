@@ -135,7 +135,11 @@ pytest --cov=app --cov-report=html
 ### react ui:
 
 ```bash
-npm run dev
+npm run start
+```
+
+```bash
+npm start
 ```
 
 ## Example transcription / video
