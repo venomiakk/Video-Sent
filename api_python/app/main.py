@@ -59,7 +59,7 @@ def root():
     """
     return {"message": "Welcome to Video Sentiment Analyzer API 🚀"}
 
-@app.post("api/v1/process")
+@app.post("/api/v1/process")
 async def process(request: TranscriptionRequest):
     """
     Main method for sentiment analysis
