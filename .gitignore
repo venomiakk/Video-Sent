@@ -4,3 +4,5 @@
 **/*.wav
 api_python/.coverage
 **/.pytest_cache
+api_python/app/core/deepgram_secret.py
+api_python/app/core/groq_secret.py

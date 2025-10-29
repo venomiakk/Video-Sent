@@ -1,10 +1,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+# v1
 from app.modules.v1.transcription.schemas import Transcription, TranscriptionRequest
-from app.modules.v1.transcription.service import transcribe_video
-from app.modules.v1.transcription.router import router as transcribe_router
-from app.modules.v1.sentiment.router import analyze_sentiment, router as sentiment_router
+from app.modules.v1.transcription.service import transcribe_video as transcribe_video_v1
+from app.modules.v1.transcription.router import router as transcribe_router_v1
+from app.modules.v1.sentiment.router import router as sentiment_router_v1
+from app.modules.v1.sentiment.service import analyze as analyze_sentiment_v1
 from app.modules.v1.auth.router import router as auth_router
+# v2
+from app.modules.v2.transcription.service import transcribe_video as transcribe_video_v2
+from app.modules.v2.transcription.router import router as transcribe_router_v2
+from app.modules.v2.sentiment.router import router as sentiment_router_v2
+from app.modules.v2.sentiment.service import analyze as analyze_sentiment_v2
+
 from app.core.database import init_indexes
 from app.socketio_handler import mount_socketio
 from contextlib import asynccontextmanager
@@ -42,10 +50,14 @@ app.add_middleware(
 # Mount Socket.IO
 mount_socketio(app)
 
-app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
-app.include_router(transcribe_router, prefix="/api/v1/transcribe", tags=["Transcription"])
-app.include_router(sentiment_router, prefix="/api/v1/sentiment", tags=["Sentiment"])
+# v1
+app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication v1"])
+app.include_router(transcribe_router_v1, prefix="/api/v1/transcribe", tags=["Transcription v1"])
+app.include_router(sentiment_router_v1, prefix="/api/v1/sentiment", tags=["Sentiment Analysis v1"])
 
+# v2
+app.include_router(transcribe_router_v2, prefix="/api/v2/transcribe", tags=["Transcription v2"])
+app.include_router(sentiment_router_v2, prefix="/api/v2/sentiment", tags=["Sentiment Analysis v2"])
 
 @app.exception_handler(AppException)
 async def app_exception_handler(request: Request, exc: AppException):
@@ -64,7 +76,7 @@ async def process(request: TranscriptionRequest):
     """
     Main method for sentiment analysis
     """
-    result = await transcribe_video(request.url, model_name=request.model)
+    result = await transcribe_video_v1(request.url, model_name=request.model)
     string_id = str(result.id)
-    analysis = await analyze_sentiment(string_id)
+    analysis = await analyze_sentiment_v1(string_id)
     return {"transcription": result, "sentiment_analysis": analysis}

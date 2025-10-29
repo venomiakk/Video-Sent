@@ -4,8 +4,8 @@ from transformers import pipeline
 import logging
 import threading
 from typing import Optional, Any
-from app.modules.v1.transcription.service import db
-from .schemas import ASPECT_KEYWORDS
+from app.core.database import db
+from app.core.sentiment_keywords import ASPECT_KEYWORDS
 from bson import ObjectId
 
 MODEL_NAME = "bardsai/twitter-sentiment-pl-base"
@@ -62,12 +62,12 @@ def _translate_sentiment_label(label: str) -> str:
         return 'negatywny'
     return 'neutralny'
 
-async def save_results_to_db(transcription_id: str, transcription_model: str, analysis_results: dict) -> None:
+async def save_results_to_db(transcription_id: str, analysis_model: str, analysis_results: dict) -> None:
     """Save sentiment analysis results to the database."""
     try:
         await db.sentiment_analysis.insert_one({
             "transcription_id": transcription_id,
-            "model": transcription_model,
+            "model": analysis_model,
             "results": analysis_results,
             "created_at": datetime.datetime.now(tz=datetime.timezone.utc)
         })
@@ -106,12 +106,12 @@ async def analyze(
     
     try:
         transcription_text = doc["transcription"] if doc else ""
-        transcription_model = doc["model"] if doc else ""
+        analysis_model = doc["model"] if doc else ""
     except Exception as e:
         logging.error(f"❌    Error accessing transcription text: {e}")
         return []
 
-    existing = await db.sentiment_analysis.find_one({"transcription_id": transcription_id, "model": transcription_model})
+    existing = await db.sentiment_analysis.find_one({"transcription_id": transcription_id, "model": analysis_model})
     if existing:
         logging.info(f"✅    Found existing sentiment analysis results for transcription_id: {transcription_id}")
         return existing["results"]
@@ -180,6 +180,6 @@ async def analyze(
             "score": res["score"],
             "sentence": res["sentence"]
         })
-    await save_results_to_db(transcription_id, transcription_model, formatted_results)
+    await save_results_to_db(transcription_id, MODEL_NAME, formatted_results)
     return formatted_results
 

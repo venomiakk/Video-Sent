@@ -6,6 +6,21 @@ Technology Review Sentiment Analyzer
 
 Due to frequent YT API updates, YT links may not work!
 
+## API Keys
+
+- Deepgram API key (required for v2 transcription module)
+  - Create account at [Deepgram](https://deepgram.com/) and get your API key
+  - Create file `deepgram_secret.py` in `api_python/app/core/` with content:
+    ```python
+    DEEPGRAM_SECRET = "your_deepgram_api_key_here"
+    ```
+- Groq API key (required for v2 sentiment analysis module)
+  - Create account at [Groq](https://www.groq.com/) and get your API key
+  - Create file `groq_secret.py` in `api_python/app/core/` with content:
+    ```python
+    GROQ_SECRET = "your_groq_api_key_here"
+    ```
+
 ## Requirements
 
 ### Tech stack
@@ -17,19 +32,14 @@ Due to frequent YT API updates, YT links may not work!
 
 ### Used AI models
 
-currently used model for transcription: python whisper (base model)
-
-consider using Deepgram API
-
-currently used model for sentiment anlysis: https://huggingface.co/bardsai/twitter-sentiment-pl-base
-
-consider using LLM like Groq via API
+- transcription: python whisper or Deepgram API nova-2
+- sentiment anlysis: https://huggingface.co/bardsai/twitter-sentiment-pl-base or Groq via API
 
 ## Current MongoDB schema
 
 ### Transcriptions collection
 
-| Name            | Data type  | Is required? | Description                                                                  |
+| Name            | Data Type  | Is Required? | Description                                                                  |
 | :-------------- | :--------- | :----------- | :--------------------------------------------------------------------------- |
 | `_id`           | `ObjectId` | Yes          | Unique identifier for the document.                                          |
 | `link_hash`     | `String`   | Yes          | Hash (e.g. SHA-256) of the `url` field. Used for quick duplicate checking.   |
@@ -41,28 +51,29 @@ consider using LLM like Groq via API
 
 ### SentimentAnalysis collection
 
-| Name            | Data type  | Is required? | Description                                              |
+| Name            | Data Type  | Is Required? | Description                                              |
 | :-------------- | :--------- | :----------- | :------------------------------------------------------- |
 | `_id`           | `ObjectId` | Yes          | Unique identifier for the document.                      |
 | `transcript_id` | `String`   | Yes          | ID of the associated transcription document.             |
+| `model`         | `String`   | Yes          | Model used for sentiment analysis.                       |
 | `created_at`    | `ISODate`  | Yes          | Date and time the document was added to the database.    |
 | `results`       | `Object`   | Yes          | Sentiment analysis results, including labels and scores. |
 
 ### `Results` object structure
 
-| Name      | Data type | Description                                                          |
-| :-------- | :-------- | :------------------------------------------------------------------- |
-| `Feature` | `Object`  | Object containing sentiment analysis results for a specific feature. |
+| Name      | Data Type | Is Required? | Description                                                          |
+| :-------- | :-------- | :----------- | :------------------------------------------------------------------- |
+| `Feature` | `Object`  | Yes          | Object containing sentiment analysis results for a specific feature. |
 
-| Name         | Data type | Description                                          |
-| :----------- | :-------- | :--------------------------------------------------- |
-| `sentiments` | `Array`   | Array of sentiment analysis results for the feature. |
+| Name         | Data Type | Is Required? | Description                                          |
+| :----------- | :-------- | :----------- | :--------------------------------------------------- |
+| `sentiments` | `Array`   | Yes          | Array of sentiment analysis results for the feature. |
 
-| Name        | Data type | Description                                                                         |
-| :---------- | :-------- | :---------------------------------------------------------------------------------- |
-| `sentiment` | `String`  | Sentiment label (e.g., positive, negative, neutral).                                |
-| `score`     | `Float`   | Confidence score for the sentiment label.                                           |
-| `sentence`  | `String`  | The sentence from the transcript that corresponds to the sentiment analysis result. |
+| Name        | Data Type | Is Required? | Description                                                                         |
+| :---------- | :-------- | :----------- | :---------------------------------------------------------------------------------- |
+| `sentiment` | `String`  | Yes          | Sentiment label (e.g., positive, negative, neutral).                                |
+| `score`     | `Float`   | No           | Confidence score for the sentiment label. (Not available with Groq API)             |
+| `sentence`  | `String`  | Yes          | The sentence from the transcript that corresponds to the sentiment analysis result. |
 
 #### Example:
 

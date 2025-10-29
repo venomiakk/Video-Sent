@@ -2,7 +2,7 @@ import datetime
 import app.modules.v1.downloader.downloader as downloader
 from pathlib import Path
 from starlette.concurrency import run_in_threadpool
-from .utils import hash_url
+from app.utils.helpers import hash_url
 from typing import Any, Dict
 from app.core.database import db
 from .schemas import Transcription

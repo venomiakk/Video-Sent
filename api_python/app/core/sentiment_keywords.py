@@ -1,5 +1,4 @@
 from typing import Dict
-from pydantic import BaseModel
 
 ASPECT_KEYWORDS: Dict[str, list] = {
     "bateria": ["bateria", "baterii", "ładowanie", "ładowania", "ładowark", "czas pracy", "trzyma"],
