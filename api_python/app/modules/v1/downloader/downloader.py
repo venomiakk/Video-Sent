@@ -45,7 +45,7 @@ def download_audio(
 	- Azure-ready (16k or 8k WAV/PCM): sample_rate=16000, audio_codec='wav', channels=1
 	"""
 
-	url = str(url)  # convert HttpUrl to str
+	url = str(url) 
 	# compute out_dir
 	project_root = Path(__file__).resolve().parents[3]  # app/modules/v1/downloader -> app
 	default_out = project_root / "resources"
@@ -57,10 +57,9 @@ def download_audio(
 	out_path = out_dir / f"{filename_hash}.{ext}"
 
 	if out_path.exists() and not force:
-		# If file already exists, attempt to fetch metadata (title) without downloading
 		title = None
 		try:
-			# use a lightweight ydl to fetch metadata only
+			# ufetch metadata only
 			with yt_dlp.YoutubeDL({"quiet": True}) as ydl:
 				meta = ydl.extract_info(url, download=False)
 				title = meta.get("title") if isinstance(meta, dict) else None
@@ -69,9 +68,8 @@ def download_audio(
 
 		return str(filename_hash), out_path, title
 
-	# build ytdlp opts
+
 	ytdlp_opts = dict(ytdlp_opts or {})
-	# output template: we'll write directly to desired filename
 	ytdlp_opts.update({
 		"format": format,
 		"outtmpl": str(out_path.with_suffix(".%(ext)s")),
@@ -97,35 +95,26 @@ def download_audio(
 	if channels:
 		pp_args += ["-ac", str(channels)]
 	if pp_args:
-		# yt-dlp supports postprocessor_args to pass to ffmpeg
+		# postprocessor_args to pass to ffmpeg
 		ytdlp_opts.setdefault("postprocessor_args", [])
 		ytdlp_opts["postprocessor_args"] += pp_args
-
-	# allow caller to override/extend
-	# Merge but give precedence to explicit ytdlp_opts passed in param
-	# (we already started from passed opts then updated defaults above)
 
 	try:
 		with yt_dlp.YoutubeDL(ytdlp_opts) as ydl:
 			info = ydl.extract_info(url, download=True)
-
-			# yt-dlp may have written to a different extension, so find actual file path
-			# search for files that start with base in out_dir
 			matches = list(out_dir.glob(f"{filename_hash}.*"))
 			if matches:
-				# choose the newest match
 				final_path = max(matches, key=lambda p: p.stat().st_mtime)
 			else:
 				final_path = out_path
 
 			title = info.get("title") if isinstance(info, dict) else None
 			return str(filename_hash), final_path, title
-	except Exception as exc:  # keep generic but re-raise as DownloadError for caller
+	except Exception as exc:
 		raise DownloadError(f"Failed to download audio for {url}: {exc}") from exc
 
 
 if __name__ == "__main__":
-    # simple test
     test_url = "https://www.youtube.com/shorts/c7SRzIUjVYw"
     filename_hash, path, info = download_audio(
         test_url,

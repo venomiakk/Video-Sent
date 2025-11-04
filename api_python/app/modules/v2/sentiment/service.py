@@ -96,7 +96,7 @@ async def analyze(transcript_id: str, analysis_model: str = "llama-3.3-70b-versa
     Jeśli nie znajdziesz niczego, zwróć: {{"results": {{}} }}
     """
 
-    logging.info(f"🔍  Analyzing sentiment for transcription_id: {transcript_id} using model: {analysis_model}")
+    logging.info(f"Analyzing sentiment for transcription_id: {transcript_id} using model: {analysis_model}")
 
     try:
         chat_completion = client.chat.completions.create(

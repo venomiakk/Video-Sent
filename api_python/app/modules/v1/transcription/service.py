@@ -7,7 +7,6 @@ from typing import Any, Dict
 from app.core.database import db
 from .schemas import Transcription
 
-# Load Whisper models lazily to avoid heavy work at import time (fixes uvicorn reload issues)
 _models: Dict[str, Any] = {}
 
 
@@ -16,7 +15,6 @@ def get_model(name: str = "base") -> Any:
     if name in _models:
         return _models[name]
 
-    # Import inside function to avoid importing whisper at module import time
     import whisper
 
     _models[name] = whisper.load_model(name)
@@ -43,11 +41,9 @@ async def transcribe_video(url: str, model_name: str = "whisperpy-base", **whisp
     base, path, title = downloader.download_audio(url, filename_hash)
     whisper_model_name = model_name[len("whisperpy-"):] if model_name.startswith("whisperpy-") else model_name
     model = get_model(whisper_model_name)
-    # whisper expects a path-like or filename string
     result = model.transcribe(str(path), **whisper_opts)
     transcription_text = result.get("text", "").strip() if isinstance(result, dict) else ""
 
-    # use timezone-aware UTC datetime for storage and include a human-friendly ISO string
     now = datetime.datetime.now(tz=datetime.timezone.utc)
     new_doc = {
         "link_hash": filename_hash,
@@ -58,13 +54,12 @@ async def transcribe_video(url: str, model_name: str = "whisperpy-base", **whisp
         "created_at": now,
     }
     await db.transcriptions.update_one(
-    {"link_hash": filename_hash, "model": model_name},       # ← filtr (który dokument chcemy zaktualizować)
-    {"$setOnInsert": new_doc},      # ← co wstawić, jeśli dokument nie istnieje
-    upsert=True                 # ← jeśli nie ma dokumentu, wstaw nowy
+    {"link_hash": filename_hash, "model": model_name},       # filtr
+    {"$setOnInsert": new_doc},      # if not found, insert new_doc
+    upsert=True                 # perform upsert if not found
 )
 
-    # Attempt to remove the audio file asynchronously so we don't block the event loop.
-    # We ignore errors here (e.g. file already removed or locked) but you can add logging.
+    # Attempt to remove the audio file asynchronously 
     try:
         await run_in_threadpool(lambda: Path(path).unlink(missing_ok=True))
     except Exception:

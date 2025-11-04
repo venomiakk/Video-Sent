@@ -119,7 +119,6 @@ async def analyze(
     if not transcription_text:
         return []
 
-    # lazy-init classifier when not provided
     if classifier_pipeline is None:
         try:
             classifier_pipeline = get_classifier()

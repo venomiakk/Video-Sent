@@ -60,9 +60,9 @@ async def transcribe_video(url: str, model_name: str = "deepgram-nova-2") -> Any
         "created_at": now,
     }
     await db.transcriptions.update_one(
-    {"link_hash": filename_hash, "model": model_name},       # ← filtr (który dokument chcemy zaktualizować)
-    {"$setOnInsert": new_doc},      # ← co wstawić, jeśli dokument nie istnieje
-    upsert=True                 # ← jeśli nie ma dokumentu, wstaw nowy
+    {"link_hash": filename_hash, "model": model_name},       # filtr
+    {"$setOnInsert": new_doc},      # if not found, insert this
+    upsert=True                 # perform upsert if not found
 )
     try:
         await run_in_threadpool(lambda: Path(path).unlink(missing_ok=True))

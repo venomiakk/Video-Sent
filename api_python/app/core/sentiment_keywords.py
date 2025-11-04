@@ -1,7 +1,7 @@
 from typing import Dict
 
 ASPECT_KEYWORDS: Dict[str, list] = {
-    "bateria": ["bateria", "baterii", "ładowanie", "ładowania", "ładowark", "czas pracy", "trzyma"],
+    "bateria": ["bateria", "baterii", "ładowanie", "ładowania", "ładowark", "czas pracy"],
     "aparat": ["aparat", "aparatu", "zdjęcia", "zdjęci", "fotografi", "wideo", "nagrywanie", "obiektyw", "zoom", "ultraszeroki"],
     "ekran": ["ekran", "ekranu", "wyświetlacz", "odświeżanie", "jasność", "kolory", "oled", "amoled"],
     "wydajność": ["wydajność", "szybkość", "płynność", "procesor", "snapdragon", "czip", "zacina", "klatkuje", "działa"],
