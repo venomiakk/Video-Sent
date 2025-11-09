@@ -12,6 +12,7 @@ from app.modules.v2.transcription.service import transcribe_video as transcribe_
 from app.modules.v2.transcription.router import router as transcribe_router_v2
 from app.modules.v2.sentiment.router import router as sentiment_router_v2
 from app.modules.v2.sentiment.service import analyze as analyze_sentiment_v2
+from app.modules.v2.transcription.schemas import TranscriptionRequest as TranscriptionRequestV2
 
 from app.core.database import init_indexes
 from app.socketio_handler import mount_socketio
@@ -74,9 +75,21 @@ def root():
 @app.post("/api/v1/process")
 async def process(request: TranscriptionRequest):
     """
-    Main method for sentiment analysis
+    Old method for sentiment analysis.\n
+    Uses local python's whisper library for transcription and huggingface transformers for sentiment analysis.
     """
     result = await transcribe_video_v1(request.url, model_name=request.model)
     string_id = str(result.id)
     analysis = await analyze_sentiment_v1(string_id)
+    return {"transcription": result, "sentiment_analysis": analysis}
+
+@app.post("/api/v2/process")
+async def process_v2(request: TranscriptionRequestV2):
+    """
+    Main method for sentiment analysis.\n
+    Uses Deepgram API for transcription and Groq API for sentiment analysis.
+    """
+    result = await transcribe_video_v2(request.url, model_name=request.model)
+    string_id = str(result.id)
+    analysis = await analyze_sentiment_v2(string_id)
     return {"transcription": result, "sentiment_analysis": analysis}
