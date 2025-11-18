@@ -1,7 +1,8 @@
 import socketio
 from fastapi import FastAPI
-from app.modules.v1.transcription.service import transcribe_video
-from app.modules.v1.sentiment.router import analyze_sentiment
+from app.modules.v2.transcription.service import transcribe_video
+# use v2 sentiment service (function is named `analyze`)
+from app.modules.v2.sentiment.service import analyze
 from app.modules.v1.analysis.schemas import VideoAnalysis, AnalysisStep
 from app.modules.v1.auth.service import decode_token
 from app.core.database import db
@@ -47,7 +48,7 @@ async def emit_step(sid: str, analysis_id: str, step: str, status: str, message:
     logger.info(f"✅ Step emitted successfully")
 
 
-async def process_video_analysis(sid: str, url: str, user_id: str, model: str = "whisperpy-base"):
+async def process_video_analysis(sid: str, url: str, user_id: str, model: str = "deepgram-nova-2"):
     """Process video analysis with real-time updates via Socket.IO"""
     analysis_id = None
     result = None
@@ -76,7 +77,15 @@ async def process_video_analysis(sid: str, url: str, user_id: str, model: str = 
         logger.info("Starting transcription - this may take a while")
         await emit_step(sid, analysis_id, "transcription", "in_progress", "Transkrypcja audio w toku... To może potrwać kilka minut.")
         
-        transcription_result = await transcribe_video(url, model_name=model)
+        # Ensure the model is Deepgram-compatible. Map known GUI aliases to Deepgram model names.
+        mapped_model = model
+        if not isinstance(mapped_model, str) or not mapped_model:
+            mapped_model = "deepgram-nova-2"
+        # Map some legacy/gui model names to Deepgram model
+        if mapped_model.startswith("whisper") or mapped_model.startswith("whisperpy"):
+            mapped_model = "deepgram-nova-2"
+
+        transcription_result = await transcribe_video(url, model_name=mapped_model)
         logger.info("Transcription completed")
         
         transcription_id = str(transcription_result.id)
@@ -87,8 +96,15 @@ async def process_video_analysis(sid: str, url: str, user_id: str, model: str = 
         # Step 2: Sentiment analysis
         await emit_step(sid, analysis_id, "sentiment", "in_progress", "Analiza sentymentu...")
         
-        sentiment_result = await analyze_sentiment(transcription_id)
-        
+        # v2 sentiment service exposes `analyze(transcript_id)`
+        sentiment_result = await analyze(transcription_id)
+
+        # GUI expects sentiment to be wrapped under a `message` key
+        if isinstance(sentiment_result, dict) and 'message' in sentiment_result:
+            sentiment_payload = sentiment_result
+        else:
+            sentiment_payload = {'message': sentiment_result}
+
         await emit_step(sid, analysis_id, "sentiment", "completed", "Analiza sentymentu zakończona")
         
         # Update analysis with results
@@ -99,7 +115,7 @@ async def process_video_analysis(sid: str, url: str, user_id: str, model: str = 
                     "status": "completed",
                     "title": transcription_result.title,
                     "transcription": transcription_text,
-                    "sentiment": sentiment_result,
+                    "sentiment": sentiment_payload,
                     "completed_at": datetime.utcnow()
                 }
             }
@@ -110,7 +126,7 @@ async def process_video_analysis(sid: str, url: str, user_id: str, model: str = 
             'analysis_id': analysis_id,
             'title': transcription_result.title,
             'transcription': transcription_text,
-            'sentiment': sentiment_result
+            'sentiment': sentiment_payload
         }, room=sid)
         
         logger.info(f"Analysis {analysis_id} completed successfully")
@@ -148,7 +164,10 @@ async def start_analysis(sid, data):
     """Handle analysis request from client"""
     logger.info(f"Analysis request from {sid}: {data}")
     url = data.get('url')
-    model = data.get('model', 'whisperpy-base')
+    model = data.get('model', 'deepgram-nova-2')
+    # Normalize model names from the GUI (map whisper aliases to Deepgram)
+    if model and (model.startswith('whisper') or model.startswith('whisperpy')):
+        model = 'deepgram-nova-2'
     token = data.get('token')
     
     if not url:
