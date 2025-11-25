@@ -1,49 +1,55 @@
 import datetime
-import app.modules.v1.downloader.downloader as downloader
-from pathlib import Path
-from starlette.concurrency import run_in_threadpool
+from typing import Any
+from fastapi.concurrency import run_in_threadpool
 from app.utils.helpers import hash_url
-from typing import Any, Dict
 from app.core.database import db
 from .schemas import Transcription
+from app.modules.v1.downloader.downloader import download_audio
+from deepgram import (
+    DeepgramClient,
+)
+from app.core.deepgram_secret import DEEPGRAM_SECRET
+import logging
+from pathlib import Path
+import json
 
-_models: Dict[str, Any] = {}
+async def transcribe_video(url: str, model_name: str = "deepgram-nova-2") -> Any:
+    '''
+    Download and transcribe video from URL provided.\n
+    Uses Deepgram's API for transcription.
+    '''
 
-
-def get_model(name: str = "base") -> Any:
-    """Return a cached whisper model, loading it on first use."""
-    if name in _models:
-        return _models[name]
-
-    import whisper
-
-    _models[name] = whisper.load_model(name)
-    return _models[name]
-
-
-async def transcribe_video(url: str, model_name: str = "whisperpy-base", **whisper_opts) -> Transcription:
-    """Download audio from `url` and transcribe it using Whisper.
-    Returns a Transcription object.
-    """
     filename_hash = hash_url(str(url))
-   
     doc = await db.transcriptions.find_one(
         {
             "link_hash": filename_hash,
             "model": model_name
         })
-
+    
     if doc:
         if "transcription" in doc:
             doc["_id"] = str(doc["_id"])
             return Transcription(**doc)
+    
+    base, path, title = download_audio(url, filename_hash)
+    deepgram_model_name = model_name[len("deepgram-"):] if model_name.startswith("deepgram-") else model_name
 
-    base, path, title = downloader.download_audio(url, filename_hash)
-    whisper_model_name = model_name[len("whisperpy-"):] if model_name.startswith("whisperpy-") else model_name
-    model = get_model(whisper_model_name)
-    result = model.transcribe(str(path), **whisper_opts)
-    transcription_text = result.get("text", "").strip() if isinstance(result, dict) else ""
-
+    try:
+        deepgram = DeepgramClient(api_key=DEEPGRAM_SECRET)
+        
+        with open(path, 'rb') as audio_file:
+            response = deepgram.listen.v1.media.transcribe_file(
+                request=audio_file.read(),
+                model=deepgram_model_name,
+                smart_format=True,
+                language="pl",
+            )
+            logging.info(f"Deepgram response: {response}")
+    except Exception as e:
+        logging.error(f"Deepgram transcription error: {e}")
+        raise e
+    
+    transcription_text = response.results.channels[0].alternatives[0].transcript.strip()
     now = datetime.datetime.now(tz=datetime.timezone.utc)
     new_doc = {
         "link_hash": filename_hash,
@@ -55,16 +61,14 @@ async def transcribe_video(url: str, model_name: str = "whisperpy-base", **whisp
     }
     await db.transcriptions.update_one(
     {"link_hash": filename_hash, "model": model_name},       # filtr
-    {"$setOnInsert": new_doc},      # if not found, insert new_doc
+    {"$setOnInsert": new_doc},      # if not found, insert this
     upsert=True                 # perform upsert if not found
 )
-
-    # Attempt to remove the audio file asynchronously 
     try:
         await run_in_threadpool(lambda: Path(path).unlink(missing_ok=True))
     except Exception:
         pass
-    
+
     inserted_doc = await db.transcriptions.find_one(
         {
             "link_hash": filename_hash,

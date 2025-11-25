@@ -1,8 +1,7 @@
 import socketio
 from fastapi import FastAPI
-from app.modules.v2.transcription.service import transcribe_video
-# use v2 sentiment service (function is named `analyze`)
-from app.modules.v2.sentiment.service import analyze
+from app.modules.v1.transcription.service import transcribe_video
+from app.modules.v1.sentiment.service import analyze
 from app.modules.v1.analysis.schemas import VideoAnalysis, AnalysisStep
 from app.modules.v1.auth.service import decode_token
 from app.core.database import db
