@@ -4,7 +4,7 @@ Technology Review Sentiment Analyzer
 
 ## Important
 
-Due to frequent YT API updates, YT links may not work!
+Works only with polish language
 
 ## API Keys
 
@@ -72,6 +72,5 @@ npm run start
 ```bash
 npm start
 ```
-
 
 https://www.instagram.com/p/DP_DL7lDAUt
