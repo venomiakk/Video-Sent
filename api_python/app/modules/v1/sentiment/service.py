@@ -66,34 +66,34 @@ async def analyze(transcript_id: str, analysis_model: str = "llama-3.3-70b-versa
 
     Zasady odpowiedzi:
     1.  Musisz odpowiedzieć WYŁĄCZNIE w formacie JSON.
-    2.  Twój JSON musi mieć jeden główny klucz o nazwie "results".
-    3.  Wartością klucza "results" musi być obiekt (słownik).
-    4.  Kluczami w tym obiekcie "results" mogą być TYLKO nazwy aspektów, o których 
-        znalazłeś wzmiankę (np. "bateria", "aparat" itd.).
-    5.  NIE umieszczaj w "results" kluczy dla aspektów, o których nie ma mowy w tekście.
-    6.  Każdy klucz aspektu (np. "bateria") musi zawierać obiekt z jednym kluczem: "sentiments".
-    7.  "sentiments" musi być listą (Array) obiektów.
-    8.  Każdy obiekt w liście "sentiments" musi mieć DOKŁADNIE dwa klucze:
+    2.  Twój JSON musi mieć DWA główne klucze: "overall_summary" i "results".
+    3.  "overall_summary" - krótkie podsumowanie całej recenzji w 2-4 zdaniach, opisujące ogólny ton i najważniejsze wnioski.
+    4.  "results" - obiekt (słownik) zawierający szczegółową analizę aspektów.
+    5.  Kluczami w obiekcie "results" mogą być TYLKO nazwy aspektów, o których znalazłeś wzmiankę (np. "bateria", "aparat" itd.).
+    6.  NIE umieszczaj w "results" kluczy dla aspektów, o których nie ma mowy w tekście.
+    7.  Każdy klucz aspektu (np. "bateria") musi zawierać obiekt z jednym kluczem: "sentiments".
+    8.  "sentiments" musi być listą (Array) obiektów.
+    9.  Każdy obiekt w liście "sentiments" musi mieć DOKŁADNIE trzy klucze:
         - "sentiment": (jeden z: "pozytywny", "negatywny", "neutralny")
-        - "sentence": (dokładny cytat z tekstu, który potwierdza opinię)
+        - "sentence": (dokładny cytat z tekstu pokazujący opinię)
     
-    Przykład struktury dla jednego aspektu:
+    Przykład struktury:
     {{
+      "overall_summary": "Recenzent jest generalnie zadowolony z telefonu. Wyróżnia długi czas pracy baterii i dobrą jakość aparatu, choć ma pewne zastrzeżenia do wydajności.",
       "results": {{
         "bateria": {{
           "sentiments": [
             {{
               "sentiment": "pozytywny",
-              "sentence": "Bateria jest świetna."
+              "sentence": "Bateria wytrzymuje cały dzień intensywnego użytkowania."
             }}
           ]
         }}
       }}
     }}
     
-    Pamiętaj: jeśli tekst wspomina o "baterii" 3 razy, klucz "bateria" powinien
-    mieć 3 obiekty w swojej liście "sentiments".
-    Jeśli nie znajdziesz niczego, zwróć: {{"results": {{}} }}
+    Pamiętaj: jeśli tekst wspomina o aspekcie wielokrotnie, uwzględnij wszystkie wzmianki.
+    Jeśli nie znajdziesz żadnych aspektów, zwróć: {{"overall_summary": "Brak szczegółowej analizy aspektów.", "results": {{}} }}
     """
 
     logging.info(f"Analyzing sentiment for transcription_id: {transcript_id} using model: {analysis_model}")
@@ -110,10 +110,19 @@ async def analyze(transcript_id: str, analysis_model: str = "llama-3.3-70b-versa
         )
 
         response_content = chat_completion.choices[0].message.content
-        analysis_results = json.loads(response_content)
-        analysis_results = analysis_results.get("results", {})
-        await save_results_to_db(transcript_id, analysis_model, analysis_results)
-        return analysis_results
+        analysis_data = json.loads(response_content)
+        
+        # Wyciągnij overall_summary i results
+        overall_summary = analysis_data.get("overall_summary", "")
+        analysis_results = analysis_data.get("results", {})
+        
+        # Zapisz pełną strukturę do bazy
+        full_analysis = {
+            "overall_summary": overall_summary,
+            "results": analysis_results
+        }
+        await save_results_to_db(transcript_id, analysis_model, full_analysis)
+        return full_analysis
 
     except APIError as e:
         print(f"API Groq Error: {e}")
