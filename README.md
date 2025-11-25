@@ -32,8 +32,8 @@ Due to frequent YT API updates, YT links may not work!
 
 ### Used AI models
 
-- transcription: python whisper or Deepgram API nova-2
-- sentiment anlysis: https://huggingface.co/bardsai/twitter-sentiment-pl-base or Groq via API
+- transcription: Deepgram API nova-2
+- sentiment anlysis: Groq API
 
 ## How to run
 
@@ -73,15 +73,5 @@ npm run start
 npm start
 ```
 
-## Example transcription / video
-
-```text
-Cześć, witajcie w mojej recenzji. Na początek design - jest absolutnie premium,
-świetnie leży w dłoni. Ekran to po prostu bajka, te kolory i odświeżanie 120Hz
-robią wrażenie. Niestety, muszę ponarzekać na baterię. Bateria ledwo
-wytrzymuje do wieczora. Serio, czas pracy jest słaby.
-Aparat jest po prostu ok, robi dobre zdjęcia w dzień. W nocy jest gorzej.
-Za te pieniądze spodziewałem się czegoś więcej.
-```
 
 https://www.instagram.com/p/DP_DL7lDAUt
