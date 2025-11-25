@@ -186,52 +186,83 @@ function AnalysisApp() {
   const renderSentimentBar = (sentiment) => {
     if (!sentiment || !sentiment.message) return null;
     
-    // Wyświetl analizę dla każdej kategorii
+    const sentimentData = sentiment.message;
+    
+    // Sprawdź czy mamy nową strukturę z overall_summary
+    const hasOverallSummary = sentimentData.overall_summary !== undefined;
+    const overallSummary = sentimentData.overall_summary;
+    const categories = hasOverallSummary ? sentimentData.results : sentimentData;
+    
     return (
-      <div className="sentiment-categories">
-        {Object.entries(sentiment.message).map(([category, data]) => {
-          if (!data.sentiments || data.sentiments.length === 0) return null;
-          
-          // Policz sentymenty
-          const counts = { pozytywny: 0, negatywny: 0, neutralny: 0 };
-          data.sentiments.forEach(item => {
-            counts[item.sentiment] = (counts[item.sentiment] || 0) + 1;
-          });
-          
-          const total = data.sentiments.length;
-          const positive = counts.pozytywny / total;
-          const negative = counts.negatywny / total;
-          const neutral = counts.neutralny / total;
-          
-          return (
-            <div key={category} className="category-sentiment">
-              <h4>{category.charAt(0).toUpperCase() + category.slice(1)}</h4>
-              <div className="sentiment-bars">
-                <div className="sentiment-bar">
-                  <span className="sentiment-label">Pozytywny</span>
-                  <div className="bar-container">
-                    <div className="bar positive" style={{ width: `${positive * 100}%` }}></div>
+      <div className="sentiment-analysis">
+        {/* Wyświetl ogólne podsumowanie jeśli istnieje */}
+        {hasOverallSummary && overallSummary && (
+          <div className="overall-summary">
+            <h3>📋 Ogólne Podsumowanie</h3>
+            <p className="summary-text">{overallSummary}</p>
+          </div>
+        )}
+        
+        {/* Wyświetl analizę dla każdej kategorii */}
+        <div className="sentiment-categories">
+          {Object.entries(categories).map(([category, data]) => {
+            if (!data.sentiments || data.sentiments.length === 0) return null;
+            
+            // Policz sentymenty
+            const counts = { pozytywny: 0, negatywny: 0, neutralny: 0 };
+            data.sentiments.forEach(item => {
+              counts[item.sentiment] = (counts[item.sentiment] || 0) + 1;
+            });
+            
+            const total = data.sentiments.length;
+            const positive = counts.pozytywny / total;
+            const negative = counts.negatywny / total;
+            const neutral = counts.neutralny / total;
+            
+            return (
+              <div key={category} className="category-sentiment">
+                <h4>{category.charAt(0).toUpperCase() + category.slice(1)}</h4>
+                <div className="sentiment-bars">
+                  <div className="sentiment-bar">
+                    <span className="sentiment-label">Pozytywny</span>
+                    <div className="bar-container">
+                      <div className="bar positive" style={{ width: `${positive * 100}%` }}></div>
+                    </div>
+                    <span className="sentiment-value">{(positive * 100).toFixed(1)}%</span>
                   </div>
-                  <span className="sentiment-value">{(positive * 100).toFixed(1)}%</span>
+                  <div className="sentiment-bar">
+                    <span className="sentiment-label">Neutralny</span>
+                    <div className="bar-container">
+                      <div className="bar neutral" style={{ width: `${neutral * 100}%` }}></div>
+                    </div>
+                    <span className="sentiment-value">{(neutral * 100).toFixed(1)}%</span>
+                  </div>
+                  <div className="sentiment-bar">
+                    <span className="sentiment-label">Negatywny</span>
+                    <div className="bar-container">
+                      <div className="bar negative" style={{ width: `${negative * 100}%` }}></div>
+                    </div>
+                    <span className="sentiment-value">{(negative * 100).toFixed(1)}%</span>
+                  </div>
                 </div>
-                <div className="sentiment-bar">
-                  <span className="sentiment-label">Neutralny</span>
-                  <div className="bar-container">
-                    <div className="bar neutral" style={{ width: `${neutral * 100}%` }}></div>
-                  </div>
-                  <span className="sentiment-value">{(neutral * 100).toFixed(1)}%</span>
-                </div>
-                <div className="sentiment-bar">
-                  <span className="sentiment-label">Negatywny</span>
-                  <div className="bar-container">
-                    <div className="bar negative" style={{ width: `${negative * 100}%` }}></div>
-                  </div>
-                  <span className="sentiment-value">{(negative * 100).toFixed(1)}%</span>
+                
+                {/* Wyświetl szczegóły każdego sentimentu z reason */}
+                <div className="sentiment-details">
+                  {data.sentiments.map((item, idx) => (
+                    <div key={idx} className={`sentiment-item ${item.sentiment}`}>
+                      <div className="sentiment-quote">"{item.sentence}"</div>
+                      {item.reason && (
+                        <div className="sentiment-reason">
+                          <strong>Uzasadnienie:</strong> {item.reason}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     );
   };
