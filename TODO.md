@@ -5,7 +5,7 @@
 - [ ] obsługa wyjątków w kodzie
 - [ ] testy jednostkowe i integracyjne backendu
 - [ ] testy API
-- [ ] testy jednostkowe i integracyjne frontendu
+- [ ] testy jednostkowe i integracyjne frontendu (to może niekoniecznie)
 - [ ] testy ui (np. end-to-end)
 - [ ] testy wydajnościowe (Jmeter lub k6)
 
