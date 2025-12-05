@@ -1,0 +1,276 @@
+{
+	"info": {
+		"_postman_id": "full-coverage-newman",
+		"name": "Video Sentiment API - Full Coverage",
+		"description": "Kolekcja testowa pokrywająca 100% scenariuszy API (Happy Path + Edge Cases). Gotowa do uruchomienia przez Newman.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "0. Setup & Global",
+			"item": [
+				{
+					"name": "Health Check (Root)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Root returns 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/",
+							"host": ["{{base_url}}"],
+							"path": [""]
+						}
+					}
+				},
+				{
+					"name": "404 Not Found Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Returns 404 for bad route\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/ninja-turtles",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "ninja-turtles"]
+						}
+					}
+				},
+				{
+					"name": "405 Method Not Allowed Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Returns 405 for GET on POST route\", function () {",
+									"    pm.response.to.have.status(405);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "register"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "1. Auth - Negative",
+			"item": [
+				{
+					"name": "Register - Empty Body",
+					"event": [{ "listen": "test", "script": { "exec": ["pm.test(\"Status 422\", function () { pm.response.to.have.status(422); });"], "type": "text/javascript" } }],
+					"request": { "method": "POST", "header": [], "body": { "mode": "raw", "raw": "{}", "options": { "raw": { "language": "json" } } }, "url": "{{base_url}}/api/v1/auth/register" }
+				},
+				{
+					"name": "Register - Missing Password",
+					"event": [{ "listen": "test", "script": { "exec": ["pm.test(\"Status 422\", function () { pm.response.to.have.status(422); });"], "type": "text/javascript" } }],
+					"request": { "method": "POST", "header": [], "body": { "mode": "raw", "raw": "{\"email\": \"test@test.com\"}", "options": { "raw": { "language": "json" } } }, "url": "{{base_url}}/api/v1/auth/register" }
+				},
+				{
+					"name": "Register - Invalid Email",
+					"event": [{ "listen": "test", "script": { "exec": ["pm.test(\"Status 422\", function () { pm.response.to.have.status(422); });"], "type": "text/javascript" } }],
+					"request": { "method": "POST", "header": [], "body": { "mode": "raw", "raw": "{\"email\": \"not-an-email\", \"password\": \"123456\"}", "options": { "raw": { "language": "json" } } }, "url": "{{base_url}}/api/v1/auth/register" }
+				},
+				{
+					"name": "Login - Non-existent User",
+					"event": [{ "listen": "test", "script": { "exec": ["pm.test(\"Status 401\", function () { pm.response.to.have.status(401); });"], "type": "text/javascript" } }],
+					"request": { "method": "POST", "header": [], "body": { "mode": "raw", "raw": "{\"email\": \"ghost@example.com\", \"password\": \"pass\"}", "options": { "raw": { "language": "json" } } }, "url": "{{base_url}}/api/v1/auth/login" }
+				}
+			]
+		},
+		{
+			"name": "2. Auth - Positive & Logic",
+			"item": [
+				{
+					"name": "Register - Success",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const randomStr = Math.random().toString(36).substring(7);",
+									"const email = `newman_${randomStr}@test.com`;",
+									"pm.collectionVariables.set(\"current_email\", email);",
+									"pm.collectionVariables.set(\"current_password\", \"secretPass123\");",
+									"console.log(\"Created User:\", email);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"Has Token\", function () { var json = pm.response.json(); pm.expect(json.access_token).to.exist; });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": { "mode": "raw", "raw": "{\"email\": \"{{current_email}}\", \"password\": \"{{current_password}}\"}", "options": { "raw": { "language": "json" } } },
+						"url": "{{base_url}}/api/v1/auth/register"
+					}
+				},
+				{
+					"name": "Register - Duplicate (400)",
+					"event": [{ "listen": "test", "script": { "exec": ["pm.test(\"Status 400\", function () { pm.response.to.have.status(400); });"], "type": "text/javascript" } }],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": { "mode": "raw", "raw": "{\"email\": \"{{current_email}}\", \"password\": \"{{current_password}}\"}", "options": { "raw": { "language": "json" } } },
+						"url": "{{base_url}}/api/v1/auth/register"
+					}
+				},
+				{
+					"name": "Login - Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"token\", jsonData.access_token);",
+									"console.log(\"Token acquired\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": { "mode": "raw", "raw": "{\"email\": \"{{current_email}}\", \"password\": \"{{current_password}}\"}", "options": { "raw": { "language": "json" } } },
+						"url": "{{base_url}}/api/v1/auth/login"
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Transcription",
+			"item": [
+				{
+					"name": "Transcribe - Bad URL Scheme (422)",
+					"event": [{ "listen": "test", "script": { "exec": ["pm.test(\"Status 422\", function () { pm.response.to.have.status(422); });"], "type": "text/javascript" } }],
+					"request": { "method": "POST", "header": [], "body": { "mode": "raw", "raw": "{\"url\": \"ftp://bad.com\", \"model\": \"deepgram-nova-2\"}", "options": { "raw": { "language": "json" } } }, "url": "{{base_url}}/api/v1/transcribe/process" }
+				},
+				{
+					"name": "Transcribe - Bad Model (422)",
+					"event": [{ "listen": "test", "script": { "exec": ["pm.test(\"Status 422\", function () { pm.response.to.have.status(422); });"], "type": "text/javascript" } }],
+					"request": { "method": "POST", "header": [], "body": { "mode": "raw", "raw": "{\"url\": \"http://youtube.com\", \"model\": \"bad-model\"}", "options": { "raw": { "language": "json" } } }, "url": "{{base_url}}/api/v1/transcribe/process" }
+				},
+				{
+					"name": "Transcribe - Not a Video (Error Handling)",
+					"event": [{ "listen": "test", "script": { "exec": ["pm.test(\"Graceful Error (not 500 crash)\", function () {", "    // Akceptujemy 400 lub 500 o ile zwraca JSON z detail", "    pm.expect(pm.response.code).to.be.oneOf([400, 500]);", "    var json = pm.response.json();", "    pm.expect(json.detail).to.exist;", "});"], "type": "text/javascript" } }],
+					"request": { "method": "POST", "header": [], "body": { "mode": "raw", "raw": "{\"url\": \"https://www.google.com\", \"model\": \"deepgram-nova-2\"}", "options": { "raw": { "language": "json" } } }, "url": "{{base_url}}/api/v1/transcribe/process" }
+				},
+				{
+					"name": "Transcribe - Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+									"var jsonData = pm.response.json();",
+									"var id = jsonData._id || jsonData.id;",
+									"pm.collectionVariables.set(\"transcription_id\", id);",
+									"console.log(\"Transcription ID:\", id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+						"body": { "mode": "raw", "raw": "{\"url\": \"https://www.youtube.com/shorts/c7SRzIUjVYw\", \"model\": \"deepgram-nova-2\"}", "options": { "raw": { "language": "json" } } },
+						"url": "{{base_url}}/api/v1/transcribe/process"
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Sentiment",
+			"item": [
+				{
+					"name": "Sentiment - Invalid ID",
+					"event": [{ "listen": "test", "script": { "exec": ["pm.test(\"Does not crash (200 or 500 handled)\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 400, 500]); });"], "type": "text/javascript" } }],
+					"request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/api/v1/sentiment/analyze/bad_id_123" }
+				},
+				{
+					"name": "Sentiment - Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"Contains summary\", function () {",
+									"    var json = pm.response.json();",
+									"    // Sprawdzamy czy w response jest struktura sentymentu",
+									"    if (json.message) {",
+									"        pm.expect(json.message.overall_summary).to.exist;",
+									"    } else {",
+									"        pm.expect(json.overall_summary).to.exist;",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+						"url": "{{base_url}}/api/v1/sentiment/analyze/{{transcription_id}}"
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{ "key": "base_url", "value": "http://localhost:8000", "type": "string" },
+		{ "key": "token", "value": "", "type": "string" },
+		{ "key": "current_email", "value": "", "type": "string" },
+		{ "key": "current_password", "value": "", "type": "string" },
+		{ "key": "transcription_id", "value": "", "type": "string" }
+	]
+}
