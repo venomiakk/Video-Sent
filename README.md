@@ -63,6 +63,25 @@ run coverage check with html report:
 pytest --cov=app --cov-report=html
 ```
 
+run api tests:
+
+```bash
+npm run test
+```
+
+run ui tests:
+
+```bash
+pytest tests/ui/ --headed --slowmo 500
+```
+
+run performance tests:
+
+```bash
+locust -f tests/performance/locustfile.py
+
+```
+
 ### react ui:
 
 ```bash

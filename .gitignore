@@ -7,3 +7,4 @@ api_python/.coverage
 api_python/app/core/deepgram_secret.py
 api_python/app/core/groq_secret.py
 /api_python/.venv
+**/node_modules
