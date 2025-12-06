@@ -1,7 +1,6 @@
 const axios = require("axios");
 const { MongoClient, ObjectId } = require("mongodb");
 
-// Increase timeout because transcription/analysis may take several minutes
 jest.setTimeout(10 * 60 * 1000);
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:8000";
@@ -56,9 +55,8 @@ describe("Transcription -> Analysis performance flow", () => {
 
     expect(analysisData).toBeTruthy();
 
-    // 3) Cleanup in Mongo (optional, only if MONGO_URI provided)
+    // 3) Cleanup in Mongo 
     if (MONGO_URI) {
-      // Modern MongoDB Node driver ignores the legacy options; create client without them.
       const client = new MongoClient(MONGO_URI);
       try {
         await client.connect();
@@ -72,7 +70,7 @@ describe("Transcription -> Analysis performance flow", () => {
           `Deleted ${saResult.deletedCount} sentiment_analysis documents for transcription ${transcriptionId}`
         );
 
-        // Delete transcription document (if ObjectId format)
+        // Delete transcription document
         let deletedTrans = { deletedCount: 0 };
         try {
           const oid = new ObjectId(String(transcriptionId));
@@ -80,7 +78,6 @@ describe("Transcription -> Analysis performance flow", () => {
             .collection("transcriptions")
             .deleteOne({ _id: oid });
         } catch (e) {
-          // transcriptionId not an ObjectId — try deleting by string _id or link_hash
           deletedTrans = await db.collection("transcriptions").deleteMany({
             $or: [{ _id: transcriptionId }, { link_hash: transcriptionId }],
           });
