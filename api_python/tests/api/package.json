@@ -1,5 +1,5 @@
 {
-  "name": "e2e",
+  "name": "api",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -9,9 +9,5 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "newman": "^4.6.1",
-    "newman-reporter-html": "^1.0.5"
-  }
+  "type": "commonjs"
 }

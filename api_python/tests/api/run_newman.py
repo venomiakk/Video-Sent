@@ -3,8 +3,8 @@ import sys
 import os
 
 # --- KONFIGURACJA ---
-COLLECTION_FILE = "tests/e2e/api_tests.postman_collection.json"
-REPORT_FILE = "tests/e2e/api_report.html"
+COLLECTION_FILE = "tests/api/api_tests.postman_collection.json"
+REPORT_FILE = "tests/api/api_report.html"
 
 # Kolory
 GREEN = "\033[92m"
