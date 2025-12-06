@@ -8,3 +8,5 @@ api_python/app/core/deepgram_secret.py
 api_python/app/core/groq_secret.py
 /api_python/.venv
 **/node_modules
+api_python/tests/unit-summary.md
+api_python/tests/ALL_TESTS_SUMMARY.md
