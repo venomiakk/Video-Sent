@@ -4,3 +4,4 @@ pytest-cov
 httpx
 mongomock
 locust
+pytest-playwright
