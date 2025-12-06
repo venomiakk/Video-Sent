@@ -3,3 +3,4 @@ pytest-asyncio
 pytest-cov
 httpx
 mongomock
+locust
