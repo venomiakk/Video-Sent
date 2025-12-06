@@ -27,3 +27,10 @@ class DownloadError(AppException):
 
     def __init__(self, message: str, status_code: int = 500, detail: Optional[dict] = None):
         super().__init__(message=message, status_code=status_code, detail=detail)
+
+
+class TranscriptionError(AppException):
+    """Raised when transcription fails or returns an invalid/empty result."""
+
+    def __init__(self, message: str, status_code: int = 422, detail: Optional[dict] = None):
+        super().__init__(message=message, status_code=status_code, detail=detail)

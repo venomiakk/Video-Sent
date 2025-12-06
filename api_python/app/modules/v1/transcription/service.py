@@ -9,6 +9,7 @@ from deepgram import (
     DeepgramClient,
 )
 from app.core.deepgram_secret import DEEPGRAM_SECRET
+from app.core.exceptions import TranscriptionError
 import logging
 from pathlib import Path
 import json
@@ -50,6 +51,19 @@ async def transcribe_video(url: str, model_name: str = "deepgram-nova-2") -> Any
         raise e
     
     transcription_text = response.results.channels[0].alternatives[0].transcript.strip()
+
+    # If transcription is empty, remove downloaded file and raise a TranscriptionError
+    if not transcription_text:
+        try:
+            await run_in_threadpool(lambda: Path(path).unlink(missing_ok=True))
+        except Exception:
+            pass
+
+        raise TranscriptionError(
+            "Transkrypcja pusta — materiał najprawdopodobniej nie jest w języku polskim lub nie został rozpoznany przez silnik transkrypcji.",
+            status_code=422,
+        )
+
     now = datetime.datetime.now(tz=datetime.timezone.utc)
     new_doc = {
         "link_hash": filename_hash,
@@ -60,10 +74,10 @@ async def transcribe_video(url: str, model_name: str = "deepgram-nova-2") -> Any
         "created_at": now,
     }
     await db.transcriptions.update_one(
-    {"link_hash": filename_hash, "model": model_name},       # filtr
-    {"$setOnInsert": new_doc},      # if not found, insert this
-    upsert=True                 # perform upsert if not found
-)
+        {"link_hash": filename_hash, "model": model_name},       # filtr
+        {"$setOnInsert": new_doc},      # if not found, insert this
+        upsert=True                 # perform upsert if not found
+    )
     try:
         await run_in_threadpool(lambda: Path(path).unlink(missing_ok=True))
     except Exception:
